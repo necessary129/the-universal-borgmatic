@@ -1,12 +1,12 @@
 FROM centos:6.6
 
-
 RUN sed -Ei 's/mirrorlist=http/#mirrorlist=http/g' /etc/yum.repos.d/* && \
 	sed -Ei 's/#baseurl=http:\/\/mirror.centos.org/baseurl=http:\/\/archive.kernel.org\/centos-vault/g' /etc/yum.repos.d/*
 
 RUN yum -y update && yum -y install \
 	bzip2 \
 	bzip2-devel \
+	e2fsprogs \
 	fuse-devel \
 	gcc \
 	git \
@@ -19,7 +19,6 @@ RUN yum -y update && yum -y install \
 	make \
 	pcre-devel \
 	perl-core \
-	sqlite-devel \
 	tar \
 	unzip \
 	wget \
@@ -67,6 +66,11 @@ RUN wget --no-check-certificate -q https://github.com/lz4/lz4/archive/refs/tags/
 WORKDIR lz4-1.9.4
 RUN make -j $(nproc) && make install
 
+WORKDIR /sqlite
+RUN wget --no-check-certificate -q https://sqlite.org/2022/sqlite-autoconf-3390400.tar.gz && \
+	tar xf sqlite-autoconf-3390400.tar.gz
+WORKDIR sqlite-autoconf-3390400
+RUN ./configure --prefix=/usr && make -j "$(nproc)" && make install
 
 WORKDIR /python
 
@@ -114,8 +118,6 @@ RUN git clone https://github.com/necessary129/borgmatic-binary
 WORKDIR borgmatic-binary
 RUN sed -Ei "s/VERSION := 1.7.2/VERSION := ${BORGMATIC_VER}/" Makefile
 RUN make all
-
-
 
 WORKDIR /finalbuilds
 RUN staticx /borg/built/borg.exe ./borg && \
